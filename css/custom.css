@@ -1,0 +1,80 @@
+/* Custom Styles for IngeniaDesk - Portal de Consultas de Ingeniería */
+
+/* Fuentes e interactividad */
+body {
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  background-color: #f8fafc;
+}
+
+/* Scrollbar estilizado para columnas Kanban */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Efectos Drag and drop para Kanban */
+.kanban-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: grab;
+}
+.kanban-card:active {
+  cursor: grabbing;
+}
+.kanban-card.dragging {
+  opacity: 0.45;
+  transform: rotate(2deg) scale(0.98);
+}
+.kanban-column-body.drag-over {
+  background-color: #eff6ff !important;
+  border: 2px dashed #3b82f6 !important;
+}
+
+/* Pulso sutil para tickets críticos */
+@keyframes criticalPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
+}
+.badge-critical-pulse {
+  animation: criticalPulse 2s infinite ease-in-out;
+}
+
+/* Estilos de Impresión / Exportación a PDF para la Ficha Técnica */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #ticketDetailModal, #ticketDetailModal * {
+    visibility: visible;
+  }
+  #ticketDetailModal {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-header {
+    display: block !important;
+    border-bottom: 2px solid #0f172a;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+  }
+}

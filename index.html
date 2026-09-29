@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PACDesk | Gestión de Consultas de Ingeniería PAC</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            pac: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+              800: '#0c4a6e',
+              900: '#082f49',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/custom.css">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- ================= NAVBAR ================= -->
+  <header class="bg-slate-900 text-white shadow-md border-b border-slate-800 sticky top-0 z-30 no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <!-- Logo y Titulo -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-amber-400 flex items-center justify-center shadow-lg shadow-sky-500/20">
+          <i data-lucide="shield-alert" class="w-6 h-6 text-white"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-lg tracking-tight text-white">PACDesk</span>
+            <span class="bg-amber-500/20 text-amber-300 border border-amber-400/30 text-[10px] font-mono uppercase px-2 py-0.5 rounded-full font-semibold">Ingeniería PAC</span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">Protecciones, Automatización, Control y Comunicaciones</p>
+        </div>
+      </div>
+
+      <!-- Acciones de Cabecera -->
+      <div class="flex items-center gap-2.5">
+        <button type="button" onclick="resetDemoData()" title="Reiniciar datos a valores iniciales PAC" class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700 transition flex items-center gap-1.5">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+          <span class="hidden md:inline">Reiniciar Demo</span>
+        </button>
+
+        <button type="button" onclick="openNewTicketModal()" class="px-4 py-2 rounded-lg text-sm font-semibold bg-sky-500 hover:bg-sky-400 text-white shadow-sm shadow-sky-500/30 transition flex items-center gap-2">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>Nueva Consulta PAC</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= BANNER ALERTA CRITICA SUBESTACION ================= -->
+  <div id="criticalAlertBanner" class="bg-red-600 text-white py-2 px-4 shadow-inner text-sm no-print hidden">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-2 font-medium">
+        <i data-lucide="zap-off" class="w-4 h-4 animate-bounce"></i>
+        <span>Alerta de Comisionamiento / Puesta en Servicio:</span>
+        <span id="criticalAlertCount" class="font-semibold underline"></span>
+      </div>
+      <span class="text-xs opacity-90 hidden md:inline">Requiere dictamen del especialista para autorizar pruebas en patio</span>
+    </div>
+  </div>
+
+  <!-- ================= CONTENIDO PRINCIPAL ================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- KPI Cards Especializadas PAC -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 no-print">
+      <!-- Total -->
+      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-xs flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Consultas PAC</p>
+          <h3 id="kpiTotal" class="text-2xl font-bold text-slate-800 mt-0.5">0</h3>
+          <p class="text-[11px] text-slate-400 mt-1">Protecciones, Control & Redes</p>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
+          <i data-lucide="layers" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <!-- En Revision Especialista -->
+      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-xs flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-blue-600 uppercase tracking-wider">En Revisión Técnica</p>
+          <h3 id="kpiRevision" class="text-2xl font-bold text-blue-700 mt-0.5">0</h3>
+          <p class="text-[11px] text-slate-400 mt-1">Con ingeniero especialista PAC</p>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+          <i data-lucide="cpu" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <!-- Criticos Comisionamiento -->
+      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-xs flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-red-600 uppercase tracking-wider">Críticas en Terreno</p>
+          <h3 id="kpiCriticos" class="text-2xl font-bold text-red-700 mt-0.5">0</h3>
+          <p class="text-[11px] text-red-500 font-medium mt-1">Detiene pruebas o energización</p>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
+          <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <!-- Resueltos / Dictaminados -->
+      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-xs flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-emerald-600 uppercase tracking-wider">Dictaminadas</p>
+          <h3 id="kpiResueltos" class="text-2xl font-bold text-emerald-700 mt-0.5">0</h3>
+          <p class="text-[11px] text-emerald-600 font-medium mt-1">Dictamen técnico emitido</p>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+          <i data-lucide="shield-check" class="w-5 h-5"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra de Filtros y Control de Vista -->
+    <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-xs space-y-3 no-print">
+      <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        <!-- Input de busqueda -->
+        <div class="relative flex-1">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+          <input type="text" id="searchInput" placeholder="Buscar por código (PAC-xxx), documento (SCD, DWG, MEM), asunto, solicitante..." class="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition">
+        </div>
+
+        <!-- Alternador Kanban / Tabla -->
+        <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl shrink-0 self-start md:self-auto">
+          <button id="btnViewKanban" type="button" class="px-3.5 py-1.5 rounded-lg text-sm font-semibold bg-white text-slate-800 shadow-sm border border-slate-200 flex items-center gap-1.5 transition">
+            <i data-lucide="kanban" class="w-4 h-4"></i>
+            <span>Kanban</span>
+          </button>
+          <button id="btnViewTable" type="button" class="px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 flex items-center gap-1.5 transition">
+            <i data-lucide="table" class="w-4 h-4"></i>
+            <span>Tabla</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Selectores de Filtro -->
+      <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-5 gap-2.5 pt-2 border-t border-slate-100 text-xs">
+        <div>
+          <label class="block font-medium text-slate-500 mb-1">Subestación / Proyecto:</label>
+          <select id="filterProyecto" class="w-full py-1.5 px-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-700">
+            <option value="todos">Todas las subestaciones</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-medium text-slate-500 mb-1">Especialidad PAC:</label>
+          <select id="filterDisciplina" class="w-full py-1.5 px-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-700">
+            <option value="todas">Todas las especialidades PAC</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-medium text-slate-500 mb-1">Nivel de Prioridad:</label>
+          <select id="filterPrioridad" class="w-full py-1.5 px-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-700">
+            <option value="todas">Todas las prioridades</option>
+            <option value="Critica">Crítica (Detiene comisionamiento)</option>
+            <option value="Alta">Alta (Respuesta en 48 hrs)</option>
+            <option value="Media">Media (Resolución regular)</option>
+            <option value="Baja">Baja (Consulta general)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-medium text-slate-500 mb-1">Estado de la Consulta:</label>
+          <select id="filterEstado" class="w-full py-1.5 px-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-700">
+            <option value="todos">Todos los estados</option>
+            <option value="nuevo">Nuevas / Por Asignar</option>
+            <option value="en_revision">En Revisión Técnica</option>
+            <option value="esperando_info">Esperando Antecedentes</option>
+            <option value="resuelto">Dictamen Emitido</option>
+            <option value="cerrado">Cerrado</option>
+          </select>
+        </div>
+
+        <div class="col-span-2 md:col-span-1 flex items-end">
+          <button id="btnClearFilters" type="button" class="w-full py-1.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center justify-center gap-1.5">
+            <i data-lucide="filter-x" class="w-3.5 h-3.5"></i>
+            <span>Limpiar</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= VISTA KANBAN ================= -->
+    <div id="kanbanView" class="overflow-x-auto pb-4">
+      <div class="flex gap-4 min-w-[1200px] items-start">
+        
+        <!-- Columna 1: Nuevas -->
+        <div id="kanban-col-nuevo" class="kanban-column flex-1 min-w-[260px] bg-slate-200/60 rounded-2xl p-3 border border-slate-200/80 flex flex-col">
+          <div class="flex items-center justify-between pb-2.5 mb-2 border-b-2 border-slate-400">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+              <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Por Asignar</h3>
+            </div>
+            <span id="kanban-count-nuevo" class="bg-white text-slate-700 text-xs font-bold px-2 py-0.5 rounded-full border border-slate-200">0</span>
+          </div>
+          <div id="kanban-list-nuevo" class="kanban-column-body flex-1 space-y-3 min-h-[420px] custom-scrollbar overflow-y-auto max-h-[72vh] p-0.5"></div>
+        </div>
+
+        <!-- Columna 2: En Revision Tecnica -->
+        <div id="kanban-col-en_revision" class="kanban-column flex-1 min-w-[260px] bg-blue-50/60 rounded-2xl p-3 border border-blue-100 flex flex-col">
+          <div class="flex items-center justify-between pb-2.5 mb-2 border-b-2 border-blue-500">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+              <h3 class="text-xs font-bold text-blue-900 uppercase tracking-wider">En Revisión PAC</h3>
+            </div>
+            <span id="kanban-count-en_revision" class="bg-white text-blue-800 text-xs font-bold px-2 py-0.5 rounded-full border border-blue-200">0</span>
+          </div>
+          <div id="kanban-list-en_revision" class="kanban-column-body flex-1 space-y-3 min-h-[420px] custom-scrollbar overflow-y-auto max-h-[72vh] p-0.5"></div>
+        </div>
+
+        <!-- Columna 3: Esperando Info -->
+        <div id="kanban-col-esperando_info" class="kanban-column flex-1 min-w-[260px] bg-amber-50/60 rounded-2xl p-3 border border-amber-100 flex flex-col">
+          <div class="flex items-center justify-between pb-2.5 mb-2 border-b-2 border-amber-500">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+              <h3 class="text-xs font-bold text-amber-900 uppercase tracking-wider">Esperando Info / Fabricante</h3>
+            </div>
+            <span id="kanban-count-esperando_info" class="bg-white text-amber-800 text-xs font-bold px-2 py-0.5 rounded-full border border-amber-200">0</span>
+          </div>
+          <div id="kanban-list-esperando_info" class="kanban-column-body flex-1 space-y-3 min-h-[420px] custom-scrollbar overflow-y-auto max-h-[72vh] p-0.5"></div>
+        </div>
+
+        <!-- Columna 4: Dictamen Emitido / Resuelto -->
+        <div id="kanban-col-resuelto" class="kanban-column flex-1 min-w-[260px] bg-emerald-50/60 rounded-2xl p-3 border border-emerald-100 flex flex-col">
+          <div class="flex items-center justify-between pb-2.5 mb-2 border-b-2 border-emerald-500">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <h3 class="text-xs font-bold text-emerald-900 uppercase tracking-wider">Dictaminado</h3>
+            </div>
+            <span id="kanban-count-resuelto" class="bg-white text-emerald-800 text-xs font-bold px-2 py-0.5 rounded-full border border-emerald-200">0</span>
+          </div>
+          <div id="kanban-list-resuelto" class="kanban-column-body flex-1 space-y-3 min-h-[420px] custom-scrollbar overflow-y-auto max-h-[72vh] p-0.5"></div>
+        </div>
+
+        <!-- Columna 5: Cerrado -->
+        <div id="kanban-col-cerrado" class="kanban-column flex-1 min-w-[260px] bg-slate-200/50 rounded-2xl p-3 border border-slate-200 flex flex-col">
+          <div class="flex items-center justify-between pb-2.5 mb-2 border-b-2 border-slate-400">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+              <h3 class="text-xs font-bold text-slate-600 uppercase tracking-wider">Cerrado</h3>
+            </div>
+            <span id="kanban-count-cerrado" class="bg-white text-slate-600 text-xs font-bold px-2 py-0.5 rounded-full border border-slate-200">0</span>
+          </div>
+          <div id="kanban-list-cerrado" class="kanban-column-body flex-1 space-y-3 min-h-[420px] custom-scrollbar overflow-y-auto max-h-[72vh] p-0.5"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ================= VISTA TABLA ================= -->
+    <div id="tableView" class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden hidden">
+      <div class="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs font-medium text-slate-500">
+        <span id="tableRowCount">Mostrando consultas PAC</span>
+        <span class="text-slate-400">Haz clic en cualquier fila para ver la ficha técnica completa</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-100/70 border-b border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+              <th class="py-3 px-4">Código</th>
+              <th class="py-3 px-4">Asunto / Subestación</th>
+              <th class="py-3 px-4">Especialidad PAC</th>
+              <th class="py-3 px-4">Prioridad</th>
+              <th class="py-3 px-4">Doc. / Esquema Ref.</th>
+              <th class="py-3 px-4">Especialista PAC</th>
+              <th class="py-3 px-4">Estado</th>
+              <th class="py-3 px-4 text-right">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody" class="divide-y divide-slate-100 text-sm">
+            <!-- Renderizado dinamico -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ================= MODAL NUEVA CONSULTA PAC ================= -->
+  <div id="newTicketModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden no-print">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in duration-200">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
+            <i data-lucide="file-plus-2" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base">Nueva Consulta Técnica PAC (RFI)</h3>
+            <p class="text-xs text-slate-400">Requerimiento para Protecciones, Automatización, Control y Comunicaciones</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeNewTicketModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body (Form) -->
+      <form id="formNewTicket" class="flex-1 overflow-y-auto p-6 space-y-4 text-sm">
+        
+        <!-- Titulo -->
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Título / Asunto de la Consulta PAC <span class="text-red-500">*</span></label>
+          <input type="text" id="modalTitulo" required placeholder="Ej: Ajuste de pendiente slope en rele diferencial 87T o conflicto dataset GOOSE" class="w-full px-3.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none">
+        </div>
+
+        <!-- Proyecto y Especialidad PAC -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Subestación / Proyecto <span class="text-red-500">*</span></label>
+            <select id="modalProyecto" required class="w-full px-3.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none bg-white">
+              <!-- Dinamico -->
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Especialidad PAC <span class="text-red-500">*</span></label>
+            <select id="modalDisciplina" required class="w-full px-3.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none bg-white">
+              <!-- Dinamico -->
+            </select>
+          </div>
+        </div>
+
+        <!-- Prioridad y Documento Afectado -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Nivel de Prioridad <span class="text-red-500">*</span></label>
+            <select id="modalPrioridad" required class="w-full px-3.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none bg-white">
+              <option value="Media">Media (Resolución regular - 5 a 7 días)</option>
+              <option value="Alta">Alta (Respuesta requerida en 48-72 hrs)</option>
+              <option value="Critica">Crítica (Detiene pruebas de inyección o energización)</option>
+              <option value="Baja">Baja (Consulta general informativa)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Documento / Plano / Archivo Ref.</label>
+            <input type="text" id="modalDocRef" placeholder="Ej: MEM-AJU-01, SCD-IEC61850-V2, DWG-FUNC-101" class="w-full px-3.5 py-2 font-mono text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none">
+          </div>
+        </div>
+
+        <!-- Solicitante -->
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Solicitante (Ingeniero / Empresa / Cargo) <span class="text-red-500">*</span></label>
+          <input type="text" id="modalSolicitante" required placeholder="Ej: Ing. Jorge Castro (Jefe Puesta en Marcha PAC)" class="w-full px-3.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none">
+        </div>
+
+        <!-- Checkbox Impacto en Obra / Energizacion -->
+        <div class="p-3 bg-red-50 border border-red-200 rounded-xl space-y-2">
+          <label class="flex items-center gap-2 cursor-pointer font-medium text-red-900 text-xs sm:text-sm">
+            <input type="checkbox" id="modalImpactoCheck" onchange="toggleImpactoField()" class="w-4 h-4 rounded text-red-600 focus:ring-red-500 border-red-300">
+            <span>¿Esta consulta afecta la fecha de energización, pruebas de inyección o costo?</span>
+          </label>
+          <div id="fieldDetalleImpacto" class="hidden">
+            <input type="text" id="modalDetalleImpacto" placeholder="Detalle el impacto estimado (Ej: Detiene comisionamiento de paño H2 por 3 días)" class="w-full px-3 py-1.5 text-xs border border-red-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-red-500">
+          </div>
+        </div>
+
+        <!-- Planteamiento Tecnico Detallado -->
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Descripción Técnica del Requerimiento <span class="text-red-500">*</span></label>
+          <textarea id="modalDescripcion" rows="3" required placeholder="Describa con precisión la discrepancia en ajustes de relés, lógicas de enclavamiento, configuración IEC 61850 o cableado..." class="w-full px-3.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none"></textarea>
+        </div>
+
+        <!-- Propuesta de Terreno -->
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Propuesta Técnica de Terreno (Opcional)</label>
+          <textarea id="modalPropuesta" rows="2" placeholder="Propuesta sugerida por el equipo de terreno o comisionamiento para agilizar la revisión..." class="w-full px-3.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none"></textarea>
+        </div>
+
+        <!-- Botones Modal -->
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+          <button type="button" onclick="closeNewTicketModal()" class="px-4 py-2 text-slate-600 hover:text-slate-800 font-medium rounded-lg hover:bg-slate-100 transition">
+            Cancelar
+          </button>
+          <button type="submit" class="px-5 py-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-lg shadow-sm transition flex items-center gap-2">
+            <i data-lucide="send" class="w-4 h-4"></i>
+            <span>Emitir Consulta PAC</span>
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ================= MODAL DETALLE / FICHA TECNICA PAC ================= -->
+  <div id="ticketDetailModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in duration-200">
+      
+      <!-- Header Ficha -->
+      <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+        <div class="flex items-center gap-3">
+          <span id="modalDetailId" class="font-mono text-sm font-bold bg-amber-500/20 text-amber-300 border border-amber-400/30 px-2.5 py-1 rounded-md">PAC-2026-000</span>
+          <div>
+            <h3 id="modalDetailTitle" class="font-bold text-base line-clamp-1">Título de la consulta PAC</h3>
+            <p id="modalDetailProyecto" class="text-xs text-slate-400">Subestación / Proyecto</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 no-print">
+          <button type="button" onclick="printTicketReport()" title="Imprimir / Exportar a PDF" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium rounded-lg text-slate-200 hover:text-white transition flex items-center gap-1.5">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            <span>Imprimir Ficha</span>
+          </button>
+          <button type="button" onclick="closeTicketDetail()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Print Only Header -->
+      <div class="hidden print-header p-6 pb-2">
+        <div class="flex justify-between items-center">
+          <div>
+            <h1 class="text-xl font-bold text-slate-900">FICHA TÉCNICA DE CONSULTA DE INGENIERÍA PAC</h1>
+            <p class="text-xs text-slate-500">Protecciones, Automatización, Control y Comunicaciones</p>
+          </div>
+          <div class="text-right font-mono text-xs text-slate-600">
+            Fecha Emisión: <span class="font-semibold">2026-09-28</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cuerpo de la Ficha -->
+      <div class="flex-1 overflow-y-auto p-6 space-y-6">
+
+        <!-- Grid de Metadatos Tecnicos PAC -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+          <div>
+            <span class="text-slate-500 font-medium block mb-1">Especialidad PAC:</span>
+            <div id="modalDetailBadgeDisc"></div>
+          </div>
+          <div>
+            <span class="text-slate-500 font-medium block mb-1">Nivel de Prioridad:</span>
+            <div id="modalDetailBadgePrio"></div>
+          </div>
+          <div>
+            <span class="text-slate-500 font-medium block mb-1">Documento / Archivo Ref:</span>
+            <span id="modalDetailDocRef" class="font-mono font-semibold text-slate-800"></span>
+          </div>
+          <div>
+            <span class="text-slate-500 font-medium block mb-1">Fecha Emisión / SLA:</span>
+            <span id="modalDetailFecha" class="font-semibold text-slate-800"></span>
+            <span class="text-slate-400 block text-[10px]">Límite: <span id="modalDetailFechaLimite"></span></span>
+          </div>
+
+          <div class="col-span-2">
+            <span class="text-slate-500 font-medium block mb-1">Solicitante (Emisor):</span>
+            <span id="modalDetailSolicitante" class="font-semibold text-slate-800"></span>
+          </div>
+
+          <!-- Asignacion de Especialista -->
+          <div class="col-span-2 no-print">
+            <label class="text-slate-500 font-medium block mb-1">Especialista Responsable PAC:</label>
+            <input type="text" id="modalDetailEspecialistaInput" placeholder="Nombre del Ingeniero Especialista PAC" class="w-full px-2.5 py-1 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-500 bg-white">
+          </div>
+
+          <!-- Cambio de Estado -->
+          <div class="col-span-2 sm:col-span-4 no-print border-t border-slate-200 pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <label class="text-slate-600 font-semibold text-xs flex items-center gap-1.5">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-sky-600"></i>
+              <span>Estado del Requerimiento PAC:</span>
+            </label>
+            <select id="modalDetailEstadoSelect" class="py-1 px-3 text-xs font-semibold bg-white border border-slate-300 rounded-lg shadow-xs focus:ring-2 focus:ring-sky-500">
+              <option value="nuevo">Nuevas / Por Asignar</option>
+              <option value="en_revision">En Revisión Técnica</option>
+              <option value="esperando_info">Esperando Info / Fabricante</option>
+              <option value="resuelto">Dictamen Emitido / Resuelto</option>
+              <option value="cerrado">Cerrado</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Caja de Impacto en Obra / Energizacion -->
+        <div id="modalDetailImpactoBox" class="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2.5 text-xs text-red-900 hidden">
+          <i data-lucide="alert-octagon" class="w-4 h-4 text-red-600 shrink-0 mt-0.5"></i>
+          <div>
+            <span class="font-bold">Advertencia de Impacto en Puesta en Servicio / Energización:</span>
+            <p id="modalDetailImpactoText" class="mt-0.5"></p>
+          </div>
+        </div>
+
+        <!-- Planteamiento Tecnico Original -->
+        <div class="space-y-2">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+            <i data-lucide="help-circle" class="w-4 h-4 text-sky-600"></i>
+            <span>Planteamiento Técnico del Problema</span>
+          </h4>
+          <div id="modalDetailDescripcion" class="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 leading-relaxed whitespace-pre-line"></div>
+        </div>
+
+        <!-- Propuesta en Terreno -->
+        <div class="space-y-2">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+            <i data-lucide="lightbulb" class="w-4 h-4 text-amber-500"></i>
+            <span>Propuesta de Solución en Terreno</span>
+          </h4>
+          <div id="modalDetailPropuesta" class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 italic"></div>
+        </div>
+
+        <!-- Historial y Trazabilidad Tecnica PAC -->
+        <div class="space-y-3 pt-2 border-t border-slate-200">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+            <i data-lucide="history" class="w-4 h-4 text-slate-500"></i>
+            <span>Trazabilidad Técnica & Dictámenes PAC</span>
+          </h4>
+          <div id="modalDetailHistorial" class="space-y-3 pt-2">
+            <!-- Timeline dinamico -->
+          </div>
+        </div>
+
+        <!-- Formulario Emitir Dictamen / Comentario -->
+        <form id="formAddComment" class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3 no-print">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+              <span>Responder / Emitir Dictamen Técnico PAC</span>
+            </label>
+            <label class="flex items-center gap-1.5 text-xs cursor-pointer font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              <input type="checkbox" id="commentIsDictamen" class="w-3.5 h-3.5 text-emerald-600 rounded">
+              <span>Marcar como Dictamen Oficial (Aprobación/Rechazo)</span>
+            </label>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <input type="text" id="commentAuthorInput" placeholder="Nombre / Firma Especialista PAC" value="Ing. Especialista PAC" class="sm:col-span-1 px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-500">
+            <textarea id="commentTextInput" rows="2" required placeholder="Escriba el dictamen técnico, justificación de cálculo de ajustes, configuración IEC 61850..." class="sm:col-span-2 px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-500"></textarea>
+          </div>
+
+          <div class="flex justify-end">
+            <button type="submit" class="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition flex items-center gap-1.5 shadow-xs">
+              <i data-lucide="send" class="w-3.5 h-3.5"></i>
+              <span>Registrar Respuesta Técnica</span>
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TOAST NOTIFICATION ================= -->
+  <div id="toastNotification" class="fixed bottom-5 right-5 z-50 transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none">
+    <div class="bg-white rounded-xl shadow-xl border border-slate-200 p-4 flex items-center gap-3 min-w-[280px]">
+      <div id="toastIcon"></div>
+      <p id="toastMessage" class="text-xs font-medium text-slate-800"></p>
+    </div>
+  </div>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500 no-print mt-auto">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="font-semibold text-slate-700">PACDesk v2.0</span>
+        <span>•</span>
+        <span>Gestión de Consultas de Ingeniería: Protecciones, Automatización, Control y Comunicaciones</span>
+      </div>
+      <div class="text-slate-400">
+        Persistencia local en navegador (LocalStorage)
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
